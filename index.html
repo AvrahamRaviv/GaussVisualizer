@@ -26,7 +26,6 @@
     <div class="ctrl">b: <input id="bInput" type="number" value="1" /></div>
     <div class="ctrl"><button id="playBtn">Play</button></div>
   </div>
-  <div class="legend">Rule: <code>new_idx = (b * indices + a) mod 19</code> · 0 at top · clockwise · green={3,6,8,11,14,17,0}</div>
   <canvas id="plot" width="600" height="600"></canvas>
 </div>
 
@@ -98,8 +97,16 @@
 
   // PLAY: always start with a=0, b=1, then iterate b=1..18
   playBtn.addEventListener("click", () => {
-    if (playing) return;               // avoid double-start
+    // stop if already playing
+    if (playing) {
+        stop();
+        playBtn.textContent = "Play";
+        return;
+    }
+
+    // start animation
     playing = true;
+    playBtn.textContent = "Stop";
 
     a = 0; b = 1;
     aInput.value = a; bInput.value = b;
@@ -107,11 +114,15 @@
 
     let cur = 1;
     const step = () => {
-      if (cur >= N){ stop(); return; }
-      b = cur; bInput.value = b; refresh();
-      const delay = (cur === 7 || cur === 12) ? 4000 : 1000;  // 4s on 7,12; else 1s
-      cur++;
-      playTimer = setTimeout(step, delay);
+        if (!playing || cur >= N) {
+            stop();
+            playBtn.textContent = "Play";
+            return;
+        }
+        b = cur; bInput.value = b; refresh();
+        const delay = (cur === 7 || cur === 12) ? 4000 : 1000;
+        cur++;
+        playTimer = setTimeout(step, delay);
     };
     step();
   });
