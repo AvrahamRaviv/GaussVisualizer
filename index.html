@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Gauss Map Visualizer</title>
+<style>
+  :root { --bg:#111; --fg:#eee; --muted:#aaa; --green:#18a558; --red:#d34; }
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 system-ui,Arial}
+  .wrap{max-width:900px;margin:20px auto;padding:0 16px;text-align:center}
+  h1{font-weight:800;margin:8px 0 12px}
+  .controls{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin:8px 0 14px}
+  .ctrl{display:flex;align-items:center;gap:8px;background:#1b1b1b;border:1px solid #2a2a2a;border-radius:10px;padding:8px 10px}
+  input{width:64px;background:#111;border:1px solid #333;color:var(--fg);padding:6px 8px;border-radius:8px;text-align:center}
+  button{background:#2b6be3;border:none;color:white;padding:8px 14px;border-radius:10px;cursor:pointer;font-weight:600}
+  button:hover{filter:brightness(1.05)}
+  .legend{color:var(--muted);font-size:13px;margin-top:6px}
+  canvas{background:#222;border-radius:12px;display:block;margin:10px auto;max-width:100%}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Gauss Map Visualizer</h1>
+  <div class="controls">
+    <div class="ctrl">a: <input id="aInput" type="number" value="0" /></div>
+    <div class="ctrl">b: <input id="bInput" type="number" value="1" /></div>
+    <div class="ctrl"><button id="playBtn">Play</button></div>
+  </div>
+  <div class="legend">Rule: <code>new_idx = (b * indices + a) mod 19</code> · 0 at top · clockwise · green={3,6,8,11,14,17,0}</div>
+  <canvas id="plot" width="600" height="600"></canvas>
+</div>
+
+<script>
+(() => {
+  const N = 19;
+  const indices = Array.from({length: N}, (_, i) => i);       // 0..18
+  const set1 = new Set([3,6,8,11,14,17,0]);
+  const colors = indices.map(i => set1.has(i) ? "#18a558" : "#d34");
+
+  const canvas = document.getElementById("plot");
+  const ctx = canvas.getContext("2d");
+  const cx = canvas.width/2, cy = canvas.height/2, R = Math.min(cx,cy) - 40;
+
+  const aInput = document.getElementById("aInput");
+  const bInput = document.getElementById("bInput");
+  const playBtn = document.getElementById("playBtn");
+
+  let a = 0, b = 1, playing = false, playTimer = null;
+
+  function computePositions(a, b){
+    // new_idx = (b*indices + a) % N
+    const newIdx = indices.map(i => (b*i + a) % N);
+    // 0 at top (π/2), clockwise (negative angle)
+    return newIdx.map(ni => {
+      const theta = -2*Math.PI*ni/N + Math.PI/2;
+      return [cx + R*Math.cos(theta), cy + R*Math.sin(theta)];
+    });
+  }
+
+  function draw(a, b){
+    const pts = computePositions(a, b);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // labels & nodes
+    ctx.font = "bold 14px system-ui, Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    for (let i=0;i<N;i++){
+      const [x,y] = pts[i];
+      // dot
+      ctx.beginPath();
+      ctx.fillStyle = colors[i];
+      ctx.arc(x, y, 14, 0, Math.PI*2);
+      ctx.fill();
+      // number
+      ctx.fillStyle = "#fff";
+      ctx.fillText(String(indices[i]), x, y+1);
+    }
+
+    // title
+    ctx.fillStyle = "#aaa";
+    ctx.font = "600 16px system-ui, Arial";
+    ctx.fillText(`a=${a} · b=${b}`, cx, 22);
+  }
+
+  function refresh(){
+    draw(a, b);
+  }
+
+  // live inputs
+  aInput.addEventListener("change", () => { a = modInt(aInput.value, N); aInput.value = a; refresh(); });
+  bInput.addEventListener("change", () => { b = clampMin(modInt(bInput.value, N), 1); bInput.value = b; refresh(); });
+
+  // helpers
+  function modInt(v, m){ const x = parseInt(v,10)||0; return ((x % m) + m) % m; }
+  function clampMin(x, lo){ return x < lo ? lo : x; }
+
+  // PLAY: always start with a=0, b=1, then iterate b=1..18
+  playBtn.addEventListener("click", () => {
+    if (playing) return;               // avoid double-start
+    playing = true;
+
+    a = 0; b = 1;
+    aInput.value = a; bInput.value = b;
+    refresh();
+
+    let cur = 1;
+    const step = () => {
+      if (cur >= N){ stop(); return; }
+      b = cur; bInput.value = b; refresh();
+      const delay = (cur === 7 || cur === 12) ? 4000 : 1000;  // 4s on 7,12; else 1s
+      cur++;
+      playTimer = setTimeout(step, delay);
+    };
+    step();
+  });
+
+  function stop(){
+    playing = false;
+    if (playTimer){ clearTimeout(playTimer); playTimer = null; }
+  }
+
+  // initial draw
+  refresh();
+})();
+</script>
+</body>
+</html>
