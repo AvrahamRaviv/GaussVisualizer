@@ -1,0 +1,16 @@
+{
+  "name": "gaussvisualizer",
+  "version": "1.0.0",
+  "description": "Gauss Map Visualizer desktop app (fixed-size window)",
+  "main": "main.js",
+  "author": "Avraham Raviv",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "package-win": "electron-packager . GaussVisualizer --platform=win32 --arch=x64 --out=dist --overwrite"
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-packager": "^17.1.2"
+  }
+}
