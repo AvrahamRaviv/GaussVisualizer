@@ -51,7 +51,7 @@
     const newIdx = indices.map(i => (b*i + a) % N);
     // 0 at top (π/2), clockwise (negative angle)
     return newIdx.map(ni => {
-    const theta = -2*Math.PI*ni/N - Math.PI/2;
+    const theta = 2*Math.PI*ni/N - Math.PI/2;
       return [cx + R*Math.cos(theta), cy + R*Math.sin(theta)];
     });
   }
